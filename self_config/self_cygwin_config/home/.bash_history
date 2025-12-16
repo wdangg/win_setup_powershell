@@ -1,0 +1,2 @@
+gcc 
+gcc --version

@@ -21,11 +21,11 @@ function Log-Message($message) {
     Add-Content -Path "error.log" -Value "[$timestamp] $message"
 }
 function Install-Scoop {
-    if (!(Check-CommandExists "scoop")) {
+    if (!($null -ne (Get-Command "scoop" -ErrorAction SilentlyContinue))) {
         Write-Info "Installing Scoop..."
         Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
         irm get.scoop.sh | iex
-        if (Check-CommandExists "scoop") {
+        if ($null -ne (Get-Command "scoop" -ErrorAction SilentlyContinue)) {
             Log-Message "SUCCESS: Scoop installed successfully."
             Write-Success "Scoop installed successfully."
         } else {
@@ -54,14 +54,20 @@ function Install-Apps {
     Write-Info "Installing applications via Scoop..."
     $apps = @("git", "vscode", "notepadplusplus", "googlechrome", "unikey", "7zip", "sourcetree")
     foreach ($app in $apps) {
-        Write-Info "Installing $app..."
-        scoop install $app
-        if ($LASTEXITCODE -eq 0) {
-            Log-Message "SUCCESS: $app installed successfully."
-            Write-Success "$app installed."
+        $installed = scoop list $app 2>$null
+        if ($installed) {
+            Log-Message "INFO: $app already installed."
+            Write-Info "$app already installed."
         } else {
-            Log-Message "FAILED: $app installation failed."
-            Write-ErrorMsg "$app installation failed."
+            Write-Info "Installing $app..."
+            scoop install $app
+            if ($LASTEXITCODE -eq 0) {
+                Log-Message "SUCCESS: $app installed successfully."
+                Write-Success "$app installed."
+            } else {
+                Log-Message "FAILED: $app installation failed."
+                Write-ErrorMsg "$app installation failed."
+            }
         }
     }
     Write-Success "Applications installation completed."
